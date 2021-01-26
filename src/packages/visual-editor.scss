@@ -1,0 +1,138 @@
+/*@formatter:off*/
+
+$headSize:60px; //顶部操作栏的高度
+$menuSize:275px; //菜单列表的宽度
+$operatorSize:275px; //右边编辑详情的宽度
+
+$ibc:#dcdfe6; //border color   边框颜色
+$ib1:#ebeef5; //border light color 边框颜色：轻
+$itc:#314659; //字体颜色
+$icc:rgba(0, 0, 0, 0.45); //图标颜色
+$boxShadowColor:#f0f1f2; //阴影颜色
+$primary:#409eff; //主题色
+
+/*@formatter:on*/
+.visual-editor {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    background-color: #fff;
+    z-index: 120;
+
+    &:before {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        background-color: rgba(0, 0, 0, .1);
+        content: "";
+    }
+
+    &>.visual-editor-menu {
+        position: absolute;
+        width: $menuSize;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        background-color: #fff;
+        z-index: 9;
+
+        .visual-component-item {
+            position: relative;
+            width: calc(100% - 20px);
+            margin-left: 10px;
+            border: 3px solid $ib1;
+            margin-top: 20px;
+            min-height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 20px;
+            box-sizing: border-box; 
+            // 蒙层
+            &:after {
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                right: 0;
+                bottom: 0;
+                content: "";
+                z-index: 2;
+                width: 100%;
+                height: 100%;
+                // background-color:gray;
+            }
+            &:hover {
+                border-color: $primary;
+                cursor: move;
+            }
+        }
+
+        .visual-component-item-label {
+            position: absolute;
+            left: -3px;
+            top: -3px;
+            background-color: $primary;
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+            z-index: 1;
+        }
+
+        .visual-component-item-content {}
+    }
+
+    &>.visual-editor-head {
+        position: absolute;
+        top: 0;
+        right: $operatorSize;
+        left: $menuSize;
+        // background-color: #ff0;
+        height: $headSize;
+        z-index: 9;
+    }
+
+    &>.visual-editor-body {
+        padding-top: $headSize;
+        padding-left: $menuSize;
+        padding-right: $operatorSize;
+        box-sizing: border-box;
+        background-color: rgba(white, 0.5);
+        height: 100%;
+        z-index: 1;
+        position: relative;
+
+        &>.visual-editor-content {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+
+            &>.visual-editor-container {
+                background-color: white;
+                flex-shrink: 0;
+                flex-grow: 0;
+                position: relative;
+                .visual-editor-block {
+                    position: absolute;
+                }
+            }
+        }
+
+    }
+
+    &>.visual-editor-operator {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #849484;
+        width: $operatorSize;
+        z-index: 9;
+    }
+}
