@@ -26,10 +26,13 @@ export default defineComponent({
                     {
                         left: 100,
                         top: 100,
+                        componentKey:'button',
+                        focus:true
                     },
                     {
                         left: 200,
                         top: 200,
+                        componentKey:'input'
                     },
                 ],
             },
