@@ -2,6 +2,7 @@ import { computed, defineComponent, PropType, ref } from 'vue'
 import './visual-editor.scss'
 import {
     createNewBlock,
+    VisualEditorBlockData,
     VisualEditorComponent,
     VisualEditorConfig,
     VisualEditorModelValue,
@@ -35,7 +36,22 @@ export const VisualEditor = defineComponent({
             width: `${dataModel.value.container.width}px`,
             height: `${dataModel.value.container.height}px`,
         }))
+        const methods = {
+            clearFocus: (block?: VisualEditorBlockData) => {
+                let blocks = (dataModel.value.blocks || []);
+                if (blocks.length === 0) return;
+                if (!!block) {
+                    //如果有入参，则除了传入的block，其他都为未选中状态
+                    blocks = blocks.filter(item => item !== block)
+                }
+                 
+                blocks.forEach(block => block.focus = false)
+            }
+        }
+
+
         // console.log(props.config)
+        //拖拽操作
         const menuDraggiter = (() => {
             let component = null as null | VisualEditorComponent
             const blockHandler = {
@@ -114,6 +130,33 @@ export const VisualEditor = defineComponent({
             }
             return blockHandler
         })()
+        //选中之后状态操作
+        const focusHandler = (() => {
+            return {
+                container: {
+                    onMouseDown: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        methods.clearFocus()
+                    }
+                },
+                block: {
+                    onMouseDown: (e: MouseEvent, block: VisualEditorBlockData) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            //如果按住shift键
+                            block.focus = !block.focus;
+                        } else {
+                            //如果没按shift键
+                            //block项其他都为未选中状态
+                            block.focus = true;
+                            methods.clearFocus(block);
+                        }
+                    }
+                }
+            }
+        })()
 
         return () => (
             <div class="visual-editor">
@@ -147,6 +190,7 @@ export const VisualEditor = defineComponent({
                             class="visual-editor-container"
                             ref={containerRef}
                             style={containerStyles.value}
+                            {...focusHandler.container}
                         >
                             {!!dataModel.value.blocks &&
                                 dataModel.value.blocks.map((block, index) => {
@@ -155,6 +199,10 @@ export const VisualEditor = defineComponent({
                                             config={props.config}
                                             block={block}
                                             key={index}
+                                            {...{
+                                                onMousedown: (e: MouseEvent) => focusHandler.block.onMouseDown(e, block)
+                                            }
+                                            }
                                         />
                                     )
                                 })}

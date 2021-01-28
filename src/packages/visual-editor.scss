@@ -123,8 +123,15 @@ $primary:#409eff; //主题色
 
                 .visual-editor-block {
                     position: absolute;
+                    //设置容器里面的组件遮罩
                     &:after{
-                        
+                        $space: 3px;
+                        position: absolute;
+                        top: -$space;
+                        left: -$space;
+                        right: -$space;
+                        bottom: -$space;
+                        content: ""
                     }    
                     &.visual-editor-block-focus {
                         border: 1px dashed $primary;
