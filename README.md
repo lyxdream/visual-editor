@@ -32,6 +32,7 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
     - 1、增加选中属性，block的选中状态
     - 2、按住shift键再操作组件状态变化
 - [ ] 容器内的组件可以拖拽移动位置；
+    - 使用mousedown事件
 - [ ] 命令队列以及对应的快捷键；
 - [ ] 单选、多选；
 - [ ] 设计好操作栏按钮：
@@ -51,12 +52,6 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
     - [ ] 下拉框：预定义选项值，双向绑定字段；
 
 
-
-
-  
-
- 
-   
 
 
 

@@ -1,4 +1,4 @@
-import { computed, defineComponent, PropType, ref } from 'vue'
+import { computed, defineComponent, PropType, ref, registerRuntimeCompiler } from 'vue'
 import './visual-editor.scss'
 import {
     createNewBlock,
@@ -9,6 +9,7 @@ import {
 } from '@/packages/visual-editor.utils'
 import { useModel } from './utils/useModel'
 import { VisualEditorBlock } from './visual-editor-block'
+import { useVisualCommand } from './utils/visual.command'
 
 export const VisualEditor = defineComponent({
     props: {
@@ -25,17 +26,30 @@ export const VisualEditor = defineComponent({
         'update:modelValue': (val?: VisualEditorModelValue) => true,
     },
     setup(props, ctx) {
+        /*双向绑定至容器中的组件数据*/
         const dataModel = useModel(
             () => props.modelValue,
             (val) => ctx.emit('update:modelValue', val)
         )
-
+        /*container节点dom对象的引用*/
         const containerRef = ref({} as HTMLDivElement)
         console.log(dataModel)
+        /*container节点style样式对象*/
         const containerStyles = computed(() => ({
             width: `${dataModel.value.container.width}px`,
             height: `${dataModel.value.container.height}px`,
         }))
+        const focusData = computed(() => {
+            const focus: VisualEditorBlockData[] = [];
+            const unFocus: VisualEditorBlockData[] = [];
+            (dataModel.value.blocks || []).forEach(block => (block.focus ? focus : unFocus).push(block));
+            return {
+                focus, // 此时选中的数据
+                unFocus // 此时未选中的数据
+            }
+        })
+
+        /*对外暴露的一些方法*/
         const methods = {
             clearFocus: (block?: VisualEditorBlockData) => {
                 let blocks = (dataModel.value.blocks || []);
@@ -44,14 +58,17 @@ export const VisualEditor = defineComponent({
                     //如果有入参，则除了传入的block，其他都为未选中状态
                     blocks = blocks.filter(item => item !== block)
                 }
-                 
                 blocks.forEach(block => block.focus = false)
-            }
+            },
+            updateBlocks: (blocks: VisualEditorBlockData[]) => {
+                dataModel.value = {...dataModel.value, blocks}
+                // console.log('blocks',blocks)
+                // console.log('dataModel',dataModel.value)
+                // console.log(dataModel.value)
+            },
         }
-
-
         // console.log(props.config)
-        //拖拽操作
+        /* 处理从菜单拖拽组件到容器的相关动作*/
         const menuDraggiter = (() => {
             let component = null as null | VisualEditorComponent
             const blockHandler = {
@@ -130,13 +147,14 @@ export const VisualEditor = defineComponent({
             }
             return blockHandler
         })()
-        //选中之后状态操作
+        /*处理block选中的相关动作*/
         const focusHandler = (() => {
             return {
                 container: {
                     onMouseDown: (e: MouseEvent) => {
                         e.stopPropagation();
                         e.preventDefault();
+                        /*点击空白处清空所有选中的block*/
                         methods.clearFocus()
                     }
                 },
@@ -145,19 +163,70 @@ export const VisualEditor = defineComponent({
                         e.stopPropagation();
                         e.preventDefault();
                         if (e.shiftKey) {
-                            //如果按住shift键
-                            block.focus = !block.focus;
+                           /*如果摁住了shift键，如果此时没有选中的block，就选中这个block，否则令这个block的选中状态去翻*/
+                            if (focusData.value.focus.length <= 1) {
+                                block.focus = true
+                            } else {
+                                block.focus = !block.focus
+                            }
                         } else {
                             //如果没按shift键
-                            //block项其他都为未选中状态
-                            block.focus = true;
-                            methods.clearFocus(block);
+                            /*如果点击的这个block没有被选中，才清空这个其他选中的block，否则不做任何事情。放置拖拽多个block，取消其他block的选中状态*/
+                            if (!block.focus) {
+                                block.focus = true
+                                methods.clearFocus(block)
+                            }
                         }
+                        blockDraggier.mousedown(e)
                     }
                 }
             }
         })()
+        /*处理block在container中拖拽移动的相关动作*/
+        const blockDraggier = (() => {
+            let dragState = {
+                startY: 0,
+                startX: 0,
+                startPos: [] as { left: number, top: number }[]
+            }
+            const mousedown = (e: MouseEvent) => {
+                dragState = {
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    startPos: focusData.value.focus.map(({ top, left }) => ({ top, left }))
+                }
+                document.addEventListener('mousemove', mousemove);
+                document.addEventListener('mouseup', mouseup);
 
+            }
+            const mousemove = (e: MouseEvent) => {
+                const durX = e.clientX - dragState.startX;
+                const durY = e.clientY - dragState.startY;
+                focusData.value.focus.forEach((block, index) => {
+                    block.top = dragState.startPos[index].top + durY;
+                    block.left = dragState.startPos[index].left + durX
+                })
+            }
+            const mouseup = () => {
+                document.removeEventListener('mousemove', mousemove);
+                document.removeEventListener('mouseup', mouseup);
+            }
+            return { mousedown }
+        })()
+
+        /*快捷键*/
+        const commander = useVisualCommand({
+            focusData,
+            updateBlocks: methods.updateBlocks,
+            dataModel
+            // dragstart,
+            // dragend,
+        });  
+        const buttons = [
+            {label: '撤销', icon: 'icon-back', handler: commander.undo, tip: 'ctrl+z'},
+            {label: '重做', icon: 'icon-forward', handler: commander.redo, tip: 'ctrl+y, ctrl+shift+z'},
+            {label: '删除', icon: 'icon-delete', handler: () => commander.delete(), tip: 'ctrl+d, backspace, delete'},
+        ]
         return () => (
             <div class="visual-editor">
                 <div class="visual-editor-menu">
@@ -180,7 +249,17 @@ export const VisualEditor = defineComponent({
                     ))}
                     {/* visual-editor-menu */}
                 </div>
-                <div class="visual-editor-head">visual-editor-head</div>
+                <div class="visual-editor-head">
+                            {
+                                buttons.map((btn, index) => (
+                                    <div  key={index} class="visual-editor-head-button" onClick={btn.handler}>
+                                          <i class={`iconfont ${btn.icon}`}/>
+                                          <span>{btn.label}</span>
+                                    </div> 
+                                ))
+                            }
+
+                </div>
                 {/* 右边操作组件部分 */}
                 <div class="visual-editor-operator">visual-editor-operator</div>
                 {/* 中间画布部分 */}
