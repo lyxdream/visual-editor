@@ -173,7 +173,6 @@ export const VisualEditor = defineComponent({
             return {
                 container: {
                     onMouseDown: (e: MouseEvent) => {
-                        e.stopPropagation()
                         e.preventDefault()
                         /*点击空白处清空所有选中的block*/
                         methods.clearFocus()

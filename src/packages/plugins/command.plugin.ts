@@ -1,4 +1,5 @@
 import { onUnmounted, reactive } from "vue"
+import { KeyboardCode } from "./keyboard-code";
 export interface CommandExecute {
     undo?: () => void, //将做的事情还原
     redo: () => void //重新做一遍要做的事情
@@ -24,7 +25,7 @@ export function useCommander() {
     /*注册一个命令*/
     const registry = (command: Command) => {
         state.commandArray.push(command);
-       
+
         state.commands[command.name] = (...args) => {
             // console.log(command.name)
             const { undo, redo } = command.execute(...args)
@@ -48,6 +49,50 @@ export function useCommander() {
         }
     }
 
+    /*快捷键*/
+    const keyboardEvent = (() => {
+        const onKeydown = (e: KeyboardEvent) => {
+            /**/
+            if (document.activeElement !== document.body) {
+                //如果不是document.body则执行默认行为
+                return;
+            }
+            // console.log(e)
+            const { keyCode, shiftKey, altKey, ctrlKey, metaKey } = e;
+            let keyString: string[] = [];
+            if (ctrlKey || metaKey) {
+                keyString.push('ctrl')
+            }
+            if (shiftKey) keyString.push('shift');
+            if (altKey) keyString.push('alt');
+            keyString.push(KeyboardCode[keyCode])
+            const keyNames = keyString.join('+');
+            //命令对象数组 循环
+            state.commandArray.forEach(({ keyboard, name }) => {
+                //keyboard 快捷键名称数组
+                if (!keyboard) {
+                    return
+                }
+                const keys = Array.isArray(keyboard) ? keyboard : [keyboard];
+                console.log(keys)
+                if (keys.indexOf(keyNames) > -1) {
+                    //找到操作得那个快捷键，并执行
+                    state.commands[name]();
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+            })
+
+        }
+        const init = () => {
+            window.addEventListener('keydown', onKeydown)
+            return () => window.removeEventListener('keydown', onKeydown)
+        }
+        return init;
+    })()
+
+
+
     /**
     * useCommander初始化函数，负责初始化键盘监听事件，调用命令的初始化逻辑
     * @author  yx
@@ -60,6 +105,7 @@ export function useCommander() {
         window.addEventListener('keydown', onKeydown);
         state.commandArray.forEach(command => !!command.init && state.destroyList.push(command.init()));
         // console.log(state.commandArray,'commandArray')
+        state.destroyList.push(keyboardEvent())
         state.destroyList.push(() => window.removeEventListener('keydown', onKeydown))
         // console.log(state.destroyList) /*destroyList里面有两个事件 （"drag"的init事件和keydown的removeEventListener）*/
     }
