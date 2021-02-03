@@ -1,4 +1,10 @@
-import { computed, defineComponent, PropType, ref, registerRuntimeCompiler } from 'vue'
+import {
+    computed,
+    defineComponent,
+    PropType,
+    ref,
+    registerRuntimeCompiler,
+} from 'vue'
 import './visual-editor.scss'
 import {
     createNewBlock,
@@ -10,6 +16,7 @@ import {
 import { useModel } from './utils/useModel'
 import { VisualEditorBlock } from './visual-editor-block'
 import { useVisualCommand } from './utils/visual.command'
+import { createEvent } from './plugins/event'
 
 export const VisualEditor = defineComponent({
     props: {
@@ -40,31 +47,46 @@ export const VisualEditor = defineComponent({
             height: `${dataModel.value.container.height}px`,
         }))
         const focusData = computed(() => {
-            const focus: VisualEditorBlockData[] = [];
-            const unFocus: VisualEditorBlockData[] = [];
-            (dataModel.value.blocks || []).forEach(block => (block.focus ? focus : unFocus).push(block));
+            const focus: VisualEditorBlockData[] = []
+            const unFocus: VisualEditorBlockData[] = []
+            ;(dataModel.value.blocks || []).forEach((block) =>
+                (block.focus ? focus : unFocus).push(block)
+            )
             return {
                 focus, // 此时选中的数据
-                unFocus // 此时未选中的数据
+                unFocus, // 此时未选中的数据
             }
         })
+
+        const dragstart = createEvent();//注册两个事件
+        const dragend = createEvent()
+        // dragstart.on(()=>{
+        //     console.log('listen drag start')
+        // })
+        // dragend.on(() => {
+        //     console.log('listen drag end')
+        // })
 
         /*对外暴露的一些方法*/
         const methods = {
             clearFocus: (block?: VisualEditorBlockData) => {
-                let blocks = (dataModel.value.blocks || []);
-                if (blocks.length === 0) return;
+                let blocks = dataModel.value.blocks || []
+                if (blocks.length === 0) return
                 if (!!block) {
                     //如果有入参，则除了传入的block，其他都为未选中状态
-                    blocks = blocks.filter(item => item !== block)
+                    blocks = blocks.filter((item) => item !== block)
                 }
-                blocks.forEach(block => block.focus = false)
+                blocks.forEach((block) => (block.focus = false))
             },
             updateBlocks: (blocks: VisualEditorBlockData[]) => {
-                dataModel.value = {...dataModel.value, blocks}
-                // console.log('blocks',blocks)
+                //合并完只剩下传入的blocks的内容
                 // console.log('dataModel',dataModel.value)
-                // console.log(dataModel.value)
+                //  console.log('blocks', blocks)
+                dataModel.value = {
+                    ...dataModel.value,
+                    blocks,
+                }
+                console.log(dataModel.value)
             },
         }
         // console.log(props.config)
@@ -72,7 +94,7 @@ export const VisualEditor = defineComponent({
         const menuDraggiter = (() => {
             let component = null as null | VisualEditorComponent
             const blockHandler = {
-                //处理拖拽组件开始操作
+                /*处理拖拽组件开始操作*/
                 dragstart: (e: DragEvent, current: VisualEditorComponent) => {
                     containerRef.value.addEventListener(
                         'dragenter',
@@ -91,6 +113,7 @@ export const VisualEditor = defineComponent({
                         containerHandler.drop
                     )
                     component = current
+                    dragstart.emit() //发布事件
                 },
                 //处理拖拽组件结束操作
                 dragend: (e: DragEvent) => {
@@ -129,7 +152,7 @@ export const VisualEditor = defineComponent({
                 /*在容器中放置的时候，给事件对象的offsetX,offsetY添加一条组件数据*/
                 drop: (e: DragEvent) => {
                     //当前拖拽的元素位置信息 push到dataModel里面
-                    const blocks = dataModel.value.blocks || []
+                    const blocks = [...(dataModel.value.blocks || [])]
                     console.log('blocks', blocks)
                     blocks.push(
                         createNewBlock({
@@ -139,31 +162,33 @@ export const VisualEditor = defineComponent({
                         })
                     )
                     //   console.log('dataModel111', dataModel.value)
-                    dataModel.value = {
-                        ...dataModel.value,
-                        blocks,
-                    }
+                    methods.updateBlocks(blocks)
+                    dragend.emit() //发布事件
                 },
             }
             return blockHandler
         })()
+
         /*处理block选中的相关动作*/
         const focusHandler = (() => {
             return {
                 container: {
                     onMouseDown: (e: MouseEvent) => {
-                        e.stopPropagation();
-                        e.preventDefault();
+                        e.stopPropagation()
+                        e.preventDefault()
                         /*点击空白处清空所有选中的block*/
                         methods.clearFocus()
-                    }
+                    },
                 },
                 block: {
-                    onMouseDown: (e: MouseEvent, block: VisualEditorBlockData) => {
-                        e.stopPropagation();
-                        e.preventDefault();
+                    onMouseDown: (
+                        e: MouseEvent,
+                        block: VisualEditorBlockData
+                    ) => {
+                        e.stopPropagation()
+                        e.preventDefault()
                         if (e.shiftKey) {
-                           /*如果摁住了shift键，如果此时没有选中的block，就选中这个block，否则令这个block的选中状态去翻*/
+                            /*如果摁住了shift键，如果此时没有选中的block，就选中这个block，否则令这个block的选中状态去翻*/
                             if (focusData.value.focus.length <= 1) {
                                 block.focus = true
                             } else {
@@ -178,8 +203,8 @@ export const VisualEditor = defineComponent({
                             }
                         }
                         blockDraggier.mousedown(e)
-                    }
-                }
+                    },
+                },
             }
         })()
         /*处理block在container中拖拽移动的相关动作*/
@@ -187,29 +212,42 @@ export const VisualEditor = defineComponent({
             let dragState = {
                 startY: 0,
                 startX: 0,
-                startPos: [] as { left: number, top: number }[]
+                startPos: [] as { left: number; top: number }[],
+                dragging: false, //在移动的时候再触发事件
             }
             const mousedown = (e: MouseEvent) => {
                 dragState = {
                     startX: e.clientX,
                     startY: e.clientY,
-                    startPos: focusData.value.focus.map(({ top, left }) => ({ top, left }))
+                    startPos: focusData.value.focus.map(({ top, left }) => ({
+                        top,
+                        left,
+                    })),
+                    dragging: false,
                 }
-                document.addEventListener('mousemove', mousemove);
-                document.addEventListener('mouseup', mouseup);
-
+                document.addEventListener('mousemove', mousemove)
+                document.addEventListener('mouseup', mouseup)
             }
             const mousemove = (e: MouseEvent) => {
-                const durX = e.clientX - dragState.startX;
-                const durY = e.clientY - dragState.startY;
+                // console.log(e.clientX)
+                const durX = e.clientX - dragState.startX
+                const durY = e.clientY - dragState.startY
+                if (!dragState.dragging) {
+                    //如果为false，则触发dragstart事件
+                    dragState.dragging = true
+                    dragstart.emit()
+                }
                 focusData.value.focus.forEach((block, index) => {
-                    block.top = dragState.startPos[index].top + durY;
-                    block.left = dragState.startPos[index].left + durX
+                    (block.top = dragState.startPos[index].top + durY),
+                        (block.left = dragState.startPos[index].left + durX)
                 })
             }
             const mouseup = () => {
-                document.removeEventListener('mousemove', mousemove);
-                document.removeEventListener('mouseup', mouseup);
+                document.removeEventListener('mousemove', mousemove)
+                document.removeEventListener('mouseup', mouseup)
+                if(dragState.dragging){
+                    dragend.emit()
+                }
             }
             return { mousedown }
         })()
@@ -218,14 +256,29 @@ export const VisualEditor = defineComponent({
         const commander = useVisualCommand({
             focusData,
             updateBlocks: methods.updateBlocks,
-            dataModel
-            // dragstart,
-            // dragend,
-        });  
+            dataModel,
+            dragstart,
+            dragend,
+        })
         const buttons = [
-            {label: '撤销', icon: 'icon-back', handler: commander.undo, tip: 'ctrl+z'},
-            {label: '重做', icon: 'icon-forward', handler: commander.redo, tip: 'ctrl+y, ctrl+shift+z'},
-            {label: '删除', icon: 'icon-delete', handler: () => commander.delete(), tip: 'ctrl+d, backspace, delete'},
+            {
+                label: '撤销',
+                icon: 'icon-back',
+                handler: commander.undo,
+                tip: 'ctrl+z',
+            },
+            {
+                label: '重做',
+                icon: 'icon-forward',
+                handler: commander.redo,
+                tip: 'ctrl+y, ctrl+shift+z',
+            },
+            {
+                label: '删除',
+                icon: 'icon-delete',
+                handler: () => commander.delete(),
+                tip: 'ctrl+d, backspace, delete',
+            },
         ]
         return () => (
             <div class="visual-editor">
@@ -250,15 +303,16 @@ export const VisualEditor = defineComponent({
                     {/* visual-editor-menu */}
                 </div>
                 <div class="visual-editor-head">
-                            {
-                                buttons.map((btn, index) => (
-                                    <div  key={index} class="visual-editor-head-button" onClick={btn.handler}>
-                                          <i class={`iconfont ${btn.icon}`}/>
-                                          <span>{btn.label}</span>
-                                    </div> 
-                                ))
-                            }
-
+                    {buttons.map((btn, index) => (
+                        <div
+                            key={index}
+                            class="visual-editor-head-button"
+                            onClick={btn.handler}
+                        >
+                            <i class={`iconfont ${btn.icon}`} />
+                            <span>{btn.label}</span>
+                        </div>
+                    ))}
                 </div>
                 {/* 右边操作组件部分 */}
                 <div class="visual-editor-operator">visual-editor-operator</div>
@@ -279,9 +333,12 @@ export const VisualEditor = defineComponent({
                                             block={block}
                                             key={index}
                                             {...{
-                                                onMousedown: (e: MouseEvent) => focusHandler.block.onMouseDown(e, block)
-                                            }
-                                            }
+                                                onMousedown: (e: MouseEvent) =>
+                                                    focusHandler.block.onMouseDown(
+                                                        e,
+                                                        block
+                                                    ),
+                                            }}
                                         />
                                     )
                                 })}

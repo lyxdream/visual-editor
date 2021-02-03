@@ -27,6 +27,8 @@
 //     onMousedown: (e) => focusHandler.block.onMouseDown(e, block)
 // }}
 
+
+
 /*
 执行函数
 {...{
@@ -35,7 +37,6 @@
 */
 
 // console.log(fn1)
-
 
 /*例子2
 const blocks = [
@@ -54,14 +55,13 @@ blocks.forEach(block=>(block.focus?focus:unFocus).push(block));
 console.log(focus,unFocus)
 */
 
-
-
 /*
 如果用户自定义的属性，放在扩展运算符后面，则扩展运算符内部的同名属性会被覆盖掉。
 let aWithOverrides = { ...a, x: 1, y: 2 }; 
 a对象的x属性和y属性，拷贝到新对象后会被覆盖掉。
 */
 
+/*
 const dataModel =  {
     container: {
         width: 100,
@@ -86,3 +86,20 @@ let arr = [{
 let fn = {...dataModel, adjustPosition: true}
 
 console.log(fn)
+
+*/
+
+//  let queue = [1,2,3,4]
+
+//   queue = queue.slice(0, 3)
+//   console.log(queue)
+
+var name = "spring";
+(function(){
+    if(typeof name ==='undefined'){
+        var name = 'summer';
+        console.log(name)
+    }else{
+        console.log(name)
+    }
+})()
