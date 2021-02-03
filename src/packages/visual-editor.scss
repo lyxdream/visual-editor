@@ -1,3 +1,6 @@
+@import './lib/iconfont/iconfont.css';
+
+
 /*@formatter:off*/
 
 $headSize:60px; //顶部操作栏的高度
@@ -52,7 +55,8 @@ $primary:#409eff; //主题色
             justify-content: center;
             align-items: center;
             padding: 30px 20px;
-            box-sizing: border-box; 
+            box-sizing: border-box;
+
             // 蒙层
             &:after {
                 position: absolute;
@@ -66,6 +70,7 @@ $primary:#409eff; //主题色
                 height: 100%;
                 // background-color:gray;
             }
+
             &:hover {
                 border-color: $primary;
                 cursor: move;
@@ -89,15 +94,54 @@ $primary:#409eff; //主题色
     &>.visual-editor-head {
         position: absolute;
         top: 0;
-        right: $operatorSize;
         left: $menuSize;
-        // background-color: #ff0;
+        right: $operatorSize;
         height: $headSize;
-        z-index: 9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-top: 10px;
+        z-index: 2;
+
+        .visual-editor-head-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(black, 0.3);
+            color: white;
+            height: 60px;
+            width: 60px;
+            cursor: pointer;
+            transition: all 300ms linear;
+            &+.visual-editor-head-button {
+                margin-left: 1px;
+            }
+            &:first-child {
+                border-top-left-radius: 4px;
+                border-bottom-left-radius: 4px;
+            }
+
+            &:last-child {
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+            }
+
+            &:hover {
+                background-color: white;
+                color: $primary;
+            }
+            i {
+                font-size: 20px;
+            }
+            span {
+                font-size: 12px;
+            }
+        }
     }
 
     &>.visual-editor-body {
-        padding-top: $headSize;
+        padding-top: $headSize+20;
         padding-left: $menuSize;
         padding-right: $operatorSize;
         box-sizing: border-box;
@@ -118,8 +162,24 @@ $primary:#409eff; //主题色
                 flex-shrink: 0;
                 flex-grow: 0;
                 position: relative;
+
                 .visual-editor-block {
                     position: absolute;
+
+                    //设置容器里面的组件遮罩
+                    &:after {
+                        $space: 3px;
+                        position: absolute;
+                        top: -$space;
+                        left: -$space;
+                        right: -$space;
+                        bottom: -$space;
+                        content: ""
+                    }
+
+                    &.visual-editor-block-focus {
+                        border: 1px dashed $primary;
+                    }
                 }
             }
         }
