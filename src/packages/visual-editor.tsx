@@ -48,8 +48,8 @@ export const VisualEditor = defineComponent({
         }))
         const focusData = computed(() => {
             const focus: VisualEditorBlockData[] = []
-            const unFocus: VisualEditorBlockData[] = [];
-            (dataModel.value.blocks || []).forEach((block) =>
+            const unFocus: VisualEditorBlockData[] = []
+            ;(dataModel.value.blocks || []).forEach((block) =>
                 (block.focus ? focus : unFocus).push(block)
             )
             return {
@@ -58,7 +58,7 @@ export const VisualEditor = defineComponent({
             }
         })
 
-        const dragstart = createEvent();//注册两个事件
+        const dragstart = createEvent() //注册两个事件
         const dragend = createEvent()
         // dragstart.on(()=>{
         //     console.log('listen drag start')
@@ -174,8 +174,13 @@ export const VisualEditor = defineComponent({
                 container: {
                     onMouseDown: (e: MouseEvent) => {
                         e.preventDefault()
-                        /*点击空白处清空所有选中的block*/
-                        methods.clearFocus()
+                        if (e.currentTarget !== e.target) {
+                            return //这样就可以去掉block里面得阻止冒泡
+                        }
+                        if (!e.shiftKey) {
+                            /*点击空白处清空所有选中的block*/
+                            methods.clearFocus()
+                        }
                     },
                 },
                 block: {
@@ -183,8 +188,6 @@ export const VisualEditor = defineComponent({
                         e: MouseEvent,
                         block: VisualEditorBlockData
                     ) => {
-                        e.stopPropagation()
-                        e.preventDefault()
                         if (e.shiftKey) {
                             /*如果摁住了shift键，如果此时没有选中的block，就选中这个block，否则令这个block的选中状态去翻*/
                             if (focusData.value.focus.length <= 1) {
@@ -235,14 +238,14 @@ export const VisualEditor = defineComponent({
                     dragstart.emit()
                 }
                 focusData.value.focus.forEach((block, index) => {
-                    block.top = dragState.startPos[index].top + durY,
-                   block.left = dragState.startPos[index].left + durX
+                    ;(block.top = dragState.startPos[index].top + durY),
+                        (block.left = dragState.startPos[index].left + durX)
                 })
             }
             const mouseup = () => {
                 document.removeEventListener('mousemove', mousemove)
                 document.removeEventListener('mouseup', mouseup)
-                if(dragState.dragging){
+                if (dragState.dragging) {
                     dragend.emit()
                 }
             }
