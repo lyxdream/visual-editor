@@ -1,10 +1,4 @@
-import {
-    computed,
-    defineComponent,
-    PropType,
-    ref,
-    registerRuntimeCompiler,
-} from 'vue'
+import { computed, defineComponent, PropType, ref } from 'vue'
 import './visual-editor.scss'
 import {
     createNewBlock,
@@ -49,9 +43,9 @@ export const VisualEditor = defineComponent({
         const focusData = computed(() => {
             const focus: VisualEditorBlockData[] = []
             const unFocus: VisualEditorBlockData[] = []
-            ;(dataModel.value.blocks || []).forEach((block) =>
-                (block.focus ? focus : unFocus).push(block)
-            )
+                ; (dataModel.value.blocks || []).forEach((block) =>
+                    (block.focus ? focus : unFocus).push(block)
+                )
             return {
                 focus, // 此时选中的数据
                 unFocus, // 此时未选中的数据
@@ -238,7 +232,7 @@ export const VisualEditor = defineComponent({
                     dragstart.emit()
                 }
                 focusData.value.focus.forEach((block, index) => {
-                    ;(block.top = dragState.startPos[index].top + durY),
+                    ; (block.top = dragState.startPos[index].top + durY),
                         (block.left = dragState.startPos[index].left + durX)
                 })
             }
@@ -279,6 +273,11 @@ export const VisualEditor = defineComponent({
                 handler: () => commander.delete(),
                 tip: 'ctrl+d, backspace, delete',
             },
+            {
+                label: '清空',
+                icon: 'icon-reset',
+                handler: () => commander.clear(),
+            },
         ]
         return () => (
             <div class="visual-editor">
@@ -303,12 +302,8 @@ export const VisualEditor = defineComponent({
                     {/* visual-editor-menu */}
                 </div>
                 <div class="visual-editor-head">
-                    {buttons.map((btn, index) => (
-                        <el-tooltip
-                            effect="dark"
-                            content={btn.tip}
-                            placement="bottom"
-                        >
+                    {buttons.map((btn, index) => {
+                        const content = (
                             <div
                                 key={index}
                                 class="visual-editor-head-button"
@@ -317,8 +312,16 @@ export const VisualEditor = defineComponent({
                                 <i class={`iconfont ${btn.icon}`} />
                                 <span>{btn.label}</span>
                             </div>
+                        )
+                        return !btn.tip ? content : <el-tooltip
+                            effect="dark"
+                            content={btn.tip}
+                            placement="bottom"
+                        >
+                            {content}
                         </el-tooltip>
-                    ))}
+                
+                    })}
                 </div>
                 {/* 右边操作组件部分 */}
                 <div class="visual-editor-operator">visual-editor-operator</div>

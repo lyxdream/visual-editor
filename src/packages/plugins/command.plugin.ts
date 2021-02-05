@@ -24,10 +24,10 @@ export function useCommander() {
 
     /*注册一个命令*/
     const registry = (command: Command) => {
+        console.log(1)
         state.commandArray.push(command)
-
         state.commands[command.name] = (...args) => {
-            // console.log(command.name)
+            console.log(command.name)
             const { undo, redo } = command.execute(...args)
             redo() //执行每个注册函数里面的redo()
             /*如果命令执行之后，不需要进入命令队列，则直接结束*/
@@ -95,20 +95,13 @@ export function useCommander() {
      * @date    2021/2/2  下午
      */
     const init = () => {
-        const onKeydown = (e: KeyboardEvent) => {
-            console.log('监听到键盘事件')
-        }
-        window.addEventListener('keydown', onKeydown)
         state.commandArray.forEach(
             (command) =>
                 !!command.init && state.destroyList.push(command.init())
         )
         // console.log(state.commandArray,'commandArray')
         state.destroyList.push(keyboardEvent())
-        state.destroyList.push(() =>
-            window.removeEventListener('keydown', onKeydown)
-        )
-        // console.log(state.destroyList) /*destroyList里面有两个事件 （"drag"的init事件和keydown的removeEventListener）*/
+        console.log(state.destroyList) /*destroyList里面有两个事件 （"drag"的init事件和keydown的removeEventListener）*/
     }
     /*注册撤回命令（撤回命令执行结果不需要进入命令队列）*/
     registry({
@@ -158,3 +151,6 @@ export function useCommander() {
         init,
     }
 }
+
+
+

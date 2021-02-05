@@ -94,12 +94,33 @@ console.log(fn)
 //   queue = queue.slice(0, 3)
 //   console.log(queue)
 
-var name = "spring";
-(function(){
-    if(typeof name ==='undefined'){
-        var name = 'summer';
-        console.log(name)
-    }else{
-        console.log(name)
-    }
-})()
+
+
+
+
+//如果数组是[1，2，3，2，4]，那么在2之后添加6后，
+
+// let arr = [1,2,5,2]
+
+// function addElement(arr,index,element){
+//       let resArr = [];
+//       if(index>arr.length-1){
+//           resArr = [...arr, element]
+//       }else if(index<0){
+//           resArr = [element,...arr]
+//       }else{
+//           resArr = [...arr.slice(0, index), element, ...arr.slice(index)]
+//       }
+//       return resArr
+// }
+// console.log(addElement(arr,-1,9))
+
+
+//filter过滤器  请输出结果并进行解释
+var ary = [0,1,2];
+ary[10] = 10;
+let res = ary.filter(function(x) {
+    console.log(x)
+  return x === undefined;
+});
+console.log(res)
